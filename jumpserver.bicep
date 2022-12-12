@@ -63,8 +63,8 @@ param workspaceName string
 @description('Specifies the location.')
 param location string = resourceGroup().location
 
-@description('Specifies the resource tags.')
-param tags object
+//@description('Specifies the resource tags.')
+//param tags object
 
 // Variables
 var vmNicName = '${vmName}Nic'
@@ -85,7 +85,7 @@ var linuxConfiguration = {
 resource virtualMachineNic 'Microsoft.Network/networkInterfaces@2021-08-01' = {
   name: vmNicName
   location: location
-  tags: tags
+  //tags: tags
   properties: {
     ipConfigurations: [
       {
@@ -108,7 +108,7 @@ resource virtualMachineNic 'Microsoft.Network/networkInterfaces@2021-08-01' = {
 resource virtualMachine 'Microsoft.Compute/virtualMachines@2021-11-01' = {
   name: vmName
   location: location
-  tags: tags
+  //tags: tags
   properties: {
     hardwareProfile: {
       vmSize: vmSize
