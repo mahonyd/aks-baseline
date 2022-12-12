@@ -18,7 +18,7 @@ param imagePublisher string = 'Canonical'
 param imageOffer string = 'UbuntuServer'
 
 @description('Specifies the Ubuntu version for the VM. This will pick a fully patched image of this given Ubuntu version.')
-param imageSku string = '20_04-LTS'
+param imageSku string = '18.04-LTS'
 
 @description('Specifies the type of authentication when accessing the Virtual Machine. SSH key is recommended.')
 @allowed([
