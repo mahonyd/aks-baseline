@@ -276,9 +276,9 @@ resource nsgBastionSubnet_diagnosticSettings 'Microsoft.Insights/diagnosticSetti
   }
 }
 
-// NSG around the Azure Bastion Subnet.
+// NSG around the VM Subnet.
 resource nsgVmSubnet 'Microsoft.Network/networkSecurityGroups@2021-05-01' = {
-  name: 'nsg-${location}-bastion'
+  name: 'nsg-${location}-vm'
   location: location
   properties: {
     securityRules: [
