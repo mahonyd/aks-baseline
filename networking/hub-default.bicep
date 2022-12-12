@@ -42,6 +42,11 @@ param hubVirtualNetworkGatewaySubnetAddressSpace string = '10.200.0.64/27'
 @minLength(10)
 param hubVirtualNetworkBastionSubnetAddressSpace string = '10.200.0.128/26'
 
+@description('Optional. A /26 under the virtual network address space for regional Jump server. Defaults to 10.200.0.128/26')
+@maxLength(18)
+@minLength(10)
+param hubVirtualNetworkVmSubnetAddressSpace string = '10.200.0.192/26'
+
 /*** RESOURCES ***/
 
 // This Log Analytics workspace stores logs from the regional hub network, its spokes, and bastion.
@@ -271,6 +276,100 @@ resource nsgBastionSubnet_diagnosticSettings 'Microsoft.Insights/diagnosticSetti
   }
 }
 
+// NSG around the Azure Bastion Subnet.
+resource nsgVmSubnet 'Microsoft.Network/networkSecurityGroups@2021-05-01' = {
+  name: 'nsg-${location}-bastion'
+  location: location
+  properties: {
+    securityRules: [
+      {
+        name: 'AllowSshToVnetInbound'
+        properties: {
+          description: 'Allow SSH in to the virtual network'
+          protocol: 'Tcp'
+          sourcePortRange: '22'
+          sourceAddressPrefix: 'VirtualNetwork'
+          destinationPortRange: '*'
+          destinationAddressPrefix: '*'
+          access: 'Allow'
+          priority: 100
+          direction: 'Outbound'
+        }
+      }
+      {
+        name: 'DenyAllInbound'
+        properties: {
+          description: 'No further inbound traffic allowed.'
+          protocol: '*'
+          sourcePortRange: '*'
+          destinationPortRange: '*'
+          sourceAddressPrefix: '*'
+          destinationAddressPrefix: '*'
+          access: 'Deny'
+          priority: 1000
+          direction: 'Inbound'
+        }
+      }
+      {
+        name: 'AllowSshToVnetOutbound'
+        properties: {
+          description: 'Allow SSH out to the virtual network'
+          protocol: 'Tcp'
+          sourcePortRange: '*'
+          sourceAddressPrefix: '*'
+          destinationPortRange: '22'
+          destinationAddressPrefix: 'VirtualNetwork'
+          access: 'Allow'
+          priority: 100
+          direction: 'Outbound'
+        }
+      }
+      {
+        name: 'Allow443ToVnetOutbound'
+        properties: {
+          description: 'Allow HTTPS out to the virtual network'
+          protocol: 'Tcp'
+          sourcePortRange: '*'
+          sourceAddressPrefix: '*'
+          destinationPortRange: '443'
+          destinationAddressPrefix: 'VirtualNetwork'
+          access: 'Allow'
+          priority: 120
+          direction: 'Outbound'
+        }
+      }
+      {
+        name: 'DenyAllOutbound'
+        properties: {
+          description: 'No further outbound traffic allowed.'
+          protocol: '*'
+          sourcePortRange: '*'
+          destinationPortRange: '*'
+          sourceAddressPrefix: '*'
+          destinationAddressPrefix: '*'
+          access: 'Deny'
+          priority: 1000
+          direction: 'Outbound'
+        }
+      }
+    ]
+  }
+}
+
+resource nsgVmSubnet_diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  scope: nsgVmSubnet
+  name: 'default'
+  properties: {
+    workspaceId: laHub.id
+    logs: [
+      {
+        categoryGroup: 'allLogs'
+        enabled: true
+      }
+    ]
+  }
+}
+
 // The regional hub network
 resource vnetHub 'Microsoft.Network/virtualNetworks@2021-05-01' = {
   name: 'vnet-${location}-hub'
@@ -300,6 +399,15 @@ resource vnetHub 'Microsoft.Network/virtualNetworks@2021-05-01' = {
           addressPrefix: hubVirtualNetworkBastionSubnetAddressSpace
           networkSecurityGroup: {
             id: nsgBastionSubnet.id
+          }
+        }
+      }
+      {
+        name: 'VmSubnet'
+        properties: {
+          addressPrefix: hubVirtualNetworkVmSubnetAddressSpace
+          networkSecurityGroup: {
+            id: nsgVmSubnet.id
           }
         }
       }
@@ -515,3 +623,4 @@ resource hubFirewall_diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2
 /*** OUTPUTS ***/
 
 output hubVnetId string = vnetHub.id
+output vmSubnetId string = resourceId('Microsoft.Network/VirtualNetworks/subnets', 'vnet-${location}-hub', 'VmSubnet')

@@ -220,6 +220,11 @@ resource targetVirtualNetwork 'Microsoft.Network/virtualNetworks@2022-05-01' exi
   resource snetApplicationGateway 'subnets' existing = {
     name: 'snet-applicationgateway'
   }
+
+  // Spoke virutual network's subnet for AKS API server
+  resource snetApiServer 'subnets' existing = {
+    name: 'snet-apiserver'
+  }
 }
 
 /*** RESOURCES ***/
@@ -1796,8 +1801,11 @@ resource mc 'Microsoft.ContainerService/managedClusters@2022-09-02-preview' = {
       'skip-nodes-with-system-pods': 'true'
     }
     apiServerAccessProfile: {
-      authorizedIPRanges: clusterAuthorizedIPRanges
-      enablePrivateCluster: false
+      //authorizedIPRanges: clusterAuthorizedIPRanges
+      enablePrivateCluster: true
+      enableVnetIntegration: true
+      subnetId: targetVirtualNetwork::snetApiServer.id
+      
     }
     podIdentityProfile: {
       enabled: false // Using federated workload identity for Azure AD Pod identities, not the deprecated AAD Pod Identity
