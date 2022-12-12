@@ -293,7 +293,7 @@ resource nsgVmSubnet 'Microsoft.Network/networkSecurityGroups@2021-05-01' = {
           destinationAddressPrefix: '*'
           access: 'Allow'
           priority: 100
-          direction: 'Outbound'
+          direction: 'Inbound'
         }
       }
       {
