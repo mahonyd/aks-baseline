@@ -8,8 +8,8 @@ param vmSize string = 'Standard_DS3_v2'
 @description('Specifies the resource id of the subnet hosting the virtual machine.')
 param vmSubnetId string
 
-@description('Specifies the name of the storage account where the bootstrap diagnostic logs of the virtual machine are stored.')
-param storageAccountName string
+//@description('Specifies the name of the storage account where the bootstrap diagnostic logs of the virtual machine are stored.')
+//param storageAccountName string
 
 @description('Specifies the image publisher of the disk image used to create the virtual machine.')
 param imagePublisher string = 'Canonical'
@@ -101,9 +101,9 @@ resource virtualMachineNic 'Microsoft.Network/networkInterfaces@2021-08-01' = {
   }
 }
 
-resource storageAccount 'Microsoft.Storage/storageAccounts@2021-09-01' existing = {
-  name: storageAccountName
-}
+//resource storageAccount 'Microsoft.Storage/storageAccounts@2021-09-01' existing = {
+ // name: storageAccountName
+//}
 
 resource virtualMachine 'Microsoft.Compute/virtualMachines@2021-11-01' = {
   name: vmName
@@ -155,8 +155,8 @@ resource virtualMachine 'Microsoft.Compute/virtualMachines@2021-11-01' = {
     }
     diagnosticsProfile: {
       bootDiagnostics: {
-        enabled: true
-        storageUri: reference(storageAccount.id, storageAccount.apiVersion).primaryEndpoints.blob
+        enabled: false
+        //storageUri: reference(storageAccount.id, storageAccount.apiVersion).primaryEndpoints.blob
       }
     }
   }
