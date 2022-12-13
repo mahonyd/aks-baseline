@@ -46,10 +46,8 @@ param hubVirtualNetworkGatewaySubnetAddressSpace string = '10.200.0.64/27'
 @minLength(10)
 param hubVirtualNetworkBastionSubnetAddressSpace string = '10.200.0.128/26'
 
-@description('Optional. A /26 under the virtual network address space for regional Jump server. Defaults to 10.200.0.128/26')
-@maxLength(18)
-@minLength(10)
-param hubVirtualNetworkVmSubnetAddressSpace string = '10.200.0.192/26'
+@description('Specifies the name of the Azure Bastion resource.')
+param bastionHostName string = 'bas-${location}-hub'
 
 /*** RESOURCES ***/
 
@@ -280,101 +278,6 @@ resource nsgBastionSubnet_diagnosticSettings 'Microsoft.Insights/diagnosticSetti
   }
 }
 
-
-// NSG around the VM Subnet.
-resource nsgVmSubnet 'Microsoft.Network/networkSecurityGroups@2021-05-01' = {
-  name: 'nsg-${location}-vm'
-  location: location
-  properties: {
-    securityRules: [
-      {
-        name: 'AllowSshToVnetInbound'
-        properties: {
-          description: 'Allow SSH in to the virtual network'
-          protocol: 'Tcp'
-          sourcePortRange: '22'
-          sourceAddressPrefix: 'VirtualNetwork'
-          destinationPortRange: '*'
-          destinationAddressPrefix: '*'
-          access: 'Allow'
-          priority: 100
-          direction: 'Inbound'
-        }
-      }
-      {
-        name: 'DenyAllInbound'
-        properties: {
-          description: 'No further inbound traffic allowed.'
-          protocol: '*'
-          sourcePortRange: '*'
-          destinationPortRange: '*'
-          sourceAddressPrefix: '*'
-          destinationAddressPrefix: '*'
-          access: 'Deny'
-          priority: 1000
-          direction: 'Inbound'
-        }
-      }
-      {
-        name: 'AllowSshToVnetOutbound'
-        properties: {
-          description: 'Allow SSH out to the virtual network'
-          protocol: 'Tcp'
-          sourcePortRange: '*'
-          sourceAddressPrefix: '*'
-          destinationPortRange: '22'
-          destinationAddressPrefix: 'VirtualNetwork'
-          access: 'Allow'
-          priority: 100
-          direction: 'Outbound'
-        }
-      }
-      {
-        name: 'Allow443ToVnetOutbound'
-        properties: {
-          description: 'Allow HTTPS out to the virtual network'
-          protocol: 'Tcp'
-          sourcePortRange: '*'
-          sourceAddressPrefix: '*'
-          destinationPortRange: '443'
-          destinationAddressPrefix: 'VirtualNetwork'
-          access: 'Allow'
-          priority: 120
-          direction: 'Outbound'
-        }
-      }
-      {
-        name: 'DenyAllOutbound'
-        properties: {
-          description: 'No further outbound traffic allowed.'
-          protocol: '*'
-          sourcePortRange: '*'
-          destinationPortRange: '*'
-          sourceAddressPrefix: '*'
-          destinationAddressPrefix: '*'
-          access: 'Deny'
-          priority: 1000
-          direction: 'Outbound'
-        }
-      }
-    ]
-  }
-}
-
-resource nsgVmSubnet_diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
-  scope: nsgVmSubnet
-  name: 'default'
-  properties: {
-    workspaceId: laHub.id
-    logs: [
-      {
-        categoryGroup: 'allLogs'
-        enabled: true
-      }
-    ]
-  }
-}
-
 // The regional hub network
 resource vnetHub 'Microsoft.Network/virtualNetworks@2021-05-01' = {
   name: 'vnet-${location}-hub'
@@ -404,15 +307,6 @@ resource vnetHub 'Microsoft.Network/virtualNetworks@2021-05-01' = {
           addressPrefix: hubVirtualNetworkBastionSubnetAddressSpace
           networkSecurityGroup: {
             id: nsgBastionSubnet.id
-          }
-        }
-      }
-      {
-        name: 'VmSubnet'
-        properties: {
-          addressPrefix: hubVirtualNetworkVmSubnetAddressSpace
-          networkSecurityGroup: {
-            id: nsgVmSubnet.id
           }
         }
       }
@@ -743,6 +637,29 @@ resource fwPolicy 'Microsoft.Network/firewallPolicies@2021-05-01' = {
             }
             {
               ruleType: 'ApplicationRule'
+              name: 'devops-origin'
+              description: 'Supports Azure DevOps agent on jump server.'
+              protocols: [
+                {
+                  protocolType: 'Https'
+                  port: 443
+                }
+              ]
+              fqdnTags: []
+              webCategories: []
+              targetFqdns: [
+                'dev.azure.com'
+              ]
+              targetUrls: []
+              destinationAddresses: []
+              terminateTLS: false
+              sourceAddresses: []
+              sourceIpGroups: [
+                ipgNodepoolSubnet.id
+              ]
+            }
+            {
+              ruleType: 'ApplicationRule'
               name: 'flux-extension-runtime-requirements'
               description: 'Supports required communication for the Flux v2 extension operate and contains allowances for our applications deployed to the cluster.'
               protocols: [
@@ -764,6 +681,48 @@ resource fwPolicy 'Microsoft.Network/firewallPolicies@2021-05-01' = {
                 '*.docker.com' // Only required if you use the default bootstrapping manifests included in this repo.
                 'ghcr.io' // Only required if you use the default bootstrapping manifests included in this repo. Kured is sourced from here by default.
                 'pkg-containers.githubusercontent.com' // Only required if you use the default bootstrapping manifests included in this repo. Kured is sourced from here by default.
+              ]
+              targetUrls: []
+              destinationAddresses: []
+              terminateTLS: false
+              sourceAddresses: []
+              sourceIpGroups: [
+                ipgNodepoolSubnet.id
+              ]
+            }
+            {
+              ruleType: 'ApplicationRule'
+              name: 'jump-server-requirements'
+              description: 'Supports required communication for the Jump Server.'
+              protocols: [
+                {
+                  protocolType: 'Https'
+                  port: 443
+                }
+                {
+                  protocolType: 'Http'
+                  port: 80
+                }
+              ]
+              fqdnTags: []
+              webCategories: []
+              targetFqdns: [
+                '*.blob.${environment().suffixes.storage}' // required to connect to storage accounts
+                'azure.archive.ubuntu.com' // required to run apt-get commands
+                'archive.ubuntu.com' // required to run apt-get commands
+                'security.ubuntu.com' // required to run apt-get commands
+                'packages.microsoft.com' // required to run apt-get commands
+                'azurecliprod.blob.${environment().suffixes.storage}' // required to get az cli install script
+                'aka.ms' // required to get az cli install script
+                'storage.googleapis.com' // required to get kubectl
+                'api.github.com' // required to get kubelogin and flux
+                'github-releases.githubusercontent.com' // required to get kubelogin, flux, osm, helm
+                'github.com' // required to get kubelogin and osm
+                'raw.githubusercontent.com' // required to get helm install script
+                'get.helm.sh' // required to get helm 
+                'fluxcd.io' // required to get flux
+                '${split(environment().resourceManager, '/')[2]}' // Prevent the linter from getting upset at management.azure.com - https://github.com/Azure/bicep/issues/3080
+                '${split(environment().authentication.loginEndpoint, '/')[2]}' // Prevent the linter from getting upset at login.microsoftonline.com
               ]
               targetUrls: []
               destinationAddresses: []
@@ -838,7 +797,43 @@ resource hubFirewall_diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2
   }
 }
 
+resource bastionPublicIpAddress 'Microsoft.Network/publicIPAddresses@2022-05-01' = {
+  name: 'pip-bas-${location}'
+  location: location
+  sku: {
+    name: 'Standard'
+  }
+  properties: {
+    publicIPAllocationMethod: 'Static'
+  }
+}
+
+var bastionSubnetId = resourceId('Microsoft.Network/virtualNetworks/subnets', 'vnet-${location}-hub', 'AzureBastionSubnet')
+
+resource bastionHost 'Microsoft.Network/bastionHosts@2022-05-01' = {
+  name: bastionHostName
+  location: location
+  properties: {
+    ipConfigurations: [
+      {
+        name: 'IpConf'
+        properties: {
+          subnet: {
+            id: bastionSubnetId
+          }
+          publicIPAddress: {
+            id: bastionPublicIpAddress.id
+          }
+        }
+      }
+    ]
+  }
+  dependsOn: [
+    vnetHub
+  ]
+}
+
 /*** OUTPUTS ***/
 
 output hubVnetId string = vnetHub.id
-output vmSubnetId string = resourceId('Microsoft.Network/VirtualNetworks/subnets', 'vnet-${location}-hub', 'VmSubnet')
+output bastionSubnetId string = resourceId('Microsoft.Network/VirtualNetworks/subnets', 'vnet-${location}-hub', 'AzureBastionSubnet')

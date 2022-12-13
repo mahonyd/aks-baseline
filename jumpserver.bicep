@@ -63,6 +63,10 @@ param workspaceName string
 @description('Specifies the location.')
 param location string = resourceGroup().location
 
+@description('The regional hub network to which this regional spoke will peer to.')
+@minLength(79)
+param hubVnetResourceId string
+
 //@description('Specifies the resource tags.')
 //param tags object
 
@@ -82,6 +86,36 @@ var linuxConfiguration = {
 }
 
 // Resources
+// This is 'rg-enterprise-networking-hubs' if using the default values in the walkthrough
+resource hubResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' existing = {
+  scope: subscription()
+  name: '${split(hubVnetResourceId,'/')[4]}'
+}
+
+// This is the firewall that was deployed in 'hub-default.bicep'
+resource hubFirewall 'Microsoft.Network/azureFirewalls@2021-05-01' existing = {
+  scope: hubResourceGroup
+  name: 'fw-${location}'
+}
+
+// Next hop to the regional hub's Azure Firewall
+resource routeNextHopToFirewall 'Microsoft.Network/routeTables@2021-05-01' = {
+  name: 'route-to-${location}-hub-fw'
+  location: location
+  properties: {
+    routes: [
+      {
+        name: 'r-nexthop-to-fw'
+        properties: {
+          nextHopType: 'VirtualAppliance'
+          addressPrefix: '0.0.0.0/0'
+          nextHopIpAddress: hubFirewall.properties.ipConfigurations[0].properties.privateIPAddress
+        }
+      }
+    ]
+  }
+}
+
 resource virtualMachineNic 'Microsoft.Network/networkInterfaces@2021-08-01' = {
   name: vmNicName
   location: location

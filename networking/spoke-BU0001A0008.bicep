@@ -26,6 +26,36 @@ param hubVnetResourceId string
 @description('The spokes\'s regional affinity, must be the same as the hub\'s location. All resources tied to this spoke will also be homed in this region. The network team maintains this approved regional list which is a subset of zones with Availability Zone support.')
 param location string
 
+@description('Optional. A /22 under the virtual network address space for AKS nodes. Defaults to 10.240.0.0/22')
+@maxLength(18)
+@minLength(10)
+param spokeVirtualNetworkClusterNodesSubnetAddressSpace string = '10.240.0.0/22'
+
+@description('Optional. A /28 under the virtual network address space for AKS cluster ingress services. Defaults to 10.240.4.0/28')
+@maxLength(18)
+@minLength(10)
+param spokeVirtualNetworkClusterIngressServicesSubnetAddressSpace string = '10.240.4.0/28'
+
+@description('Optional. A /24 under the virtual network address space for private link endpoints. Defaults to 10.240.5.0/24')
+@maxLength(18)
+@minLength(10)
+param spokeVirtualNetworkPrivateLinkEndpointsSubnetAddressSpace string = '10.240.5.0/24'
+
+@description('Optional. A /24 under the virtual network address space for application gateway. Defaults to 10.240.6.0/24')
+@maxLength(18)
+@minLength(10)
+param spokeVirtualNetworkAppGatewaySubnetAddressSpace string = '10.240.6.0/24'
+
+@description('Optional. A /27 under the virtual network address space for AKS API server. Defaults to 10.240.7.0/27')
+@maxLength(18)
+@minLength(10)
+param spokeVirtualNetworkApiServerSubnetAddressSpace string = '10.240.7.0/27'
+
+@description('Optional. A /26 under the virtual network address space for Jump server. Defaults to 10.240.8.0/26')
+@maxLength(18)
+@minLength(10)
+param spokeVirtualNetworkVmSubnetAddressSpace string = '10.240.8.0/26'
+
 // A designator that represents a business unit id and application id
 var orgAppId = 'BU0001A0008'
 var clusterVNetName = 'vnet-spoke-${orgAppId}-00'
@@ -354,6 +384,128 @@ resource nsgApiServerSubnet_diagnosticsSettings 'Microsoft.Insights/diagnosticSe
   }
 }
 
+// NSG around the VM Subnet.
+resource nsgVmSubnet 'Microsoft.Network/networkSecurityGroups@2021-05-01' = {
+  name: 'nsg-${location}-vm'
+  location: location
+  properties: {
+    securityRules: [
+      {
+        name: 'AllowSshToVnetInbound'
+        properties: {
+          description: 'Allow SSH in to the virtual network'
+          protocol: 'Tcp'
+          sourcePortRange: '*'
+          sourceAddressPrefix: 'VirtualNetwork'
+          destinationPortRange: '22'
+          destinationAddressPrefix: 'VirtualNetwork'
+          access: 'Allow'
+          priority: 100
+          direction: 'Inbound'
+        }
+      }
+      {
+        name: 'AllowHealthProbesInbound'
+        properties: {
+          description: 'Service Requirement. Allow Health Probes.'
+          protocol: 'Tcp'
+          sourcePortRange: '*'
+          destinationPortRange: '443'
+          sourceAddressPrefix: 'AzureLoadBalancer'
+          destinationAddressPrefix: 'VirtualNetwork'
+          access: 'Allow'
+          priority: 110
+          direction: 'Inbound'
+        }
+      }
+      {
+        name: 'DenyAllInbound'
+        properties: {
+          description: 'No further inbound traffic allowed.'
+          protocol: '*'
+          sourcePortRange: '*'
+          destinationPortRange: '*'
+          sourceAddressPrefix: '*'
+          destinationAddressPrefix: '*'
+          access: 'Deny'
+          priority: 1000
+          direction: 'Inbound'
+        }
+      }
+      {
+        name: 'AllowSshToVnetOutbound'
+        properties: {
+          description: 'Allow SSH out to the virtual network'
+          protocol: 'Tcp'
+          sourcePortRange: '*'
+          sourceAddressPrefix: 'VirtualNetwork'
+          destinationPortRange: '22'
+          destinationAddressPrefix: 'VirtualNetwork'
+          access: 'Allow'
+          priority: 100
+          direction: 'Outbound'
+        }
+      }
+      {
+        name: 'AllowHttpsToInternetOutbound'
+        properties: {
+          description: 'Allow HTTPS out to the internet'
+          protocol: 'Tcp'
+          sourcePortRange: '*'
+          sourceAddressPrefix: 'VirtualNetwork'
+          destinationPortRange: '443'
+          destinationAddressPrefix: 'Internet'
+          access: 'Allow'
+          priority: 110
+          direction: 'Outbound'
+        }
+      }
+      {
+        name: 'AllowHttpToInternetOutbound'
+        properties: {
+          description: 'Allow HTTP out to the internet'
+          protocol: 'Tcp'
+          sourcePortRange: '*'
+          sourceAddressPrefix: 'VirtualNetwork'
+          destinationPortRange: '80'
+          destinationAddressPrefix: 'Internet'
+          access: 'Allow'
+          priority: 120
+          direction: 'Outbound'
+        }
+      }
+      {
+        name: 'DenyAllOutbound'
+        properties: {
+          description: 'No further outbound traffic allowed.'
+          protocol: '*'
+          sourcePortRange: '*'
+          destinationPortRange: '*'
+          sourceAddressPrefix: '*'
+          destinationAddressPrefix: '*'
+          access: 'Deny'
+          priority: 1000
+          direction: 'Outbound'
+        }
+      }
+    ]
+  }
+}
+
+resource nsgVmSubnet_diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  scope: nsgVmSubnet
+  name: 'default'
+  properties: {
+    workspaceId: laHub.id
+    logs: [
+      {
+        categoryGroup: 'allLogs'
+        enabled: true
+      }
+    ]
+  }
+}
+
 // The spoke virtual network.
 // 65,536 (-reserved) IPs available to the workload, split across two subnets for AKS,
 // one for App Gateway and one for Private Link endpoints.
@@ -370,7 +522,7 @@ resource vnetSpoke 'Microsoft.Network/virtualNetworks@2021-05-01' = {
       {
         name: 'snet-clusternodes'
         properties: {
-          addressPrefix: '10.240.0.0/22'
+          addressPrefix: spokeVirtualNetworkClusterNodesSubnetAddressSpace
           routeTable: {
             id: routeNextHopToFirewall.id
           }
@@ -384,7 +536,7 @@ resource vnetSpoke 'Microsoft.Network/virtualNetworks@2021-05-01' = {
       {
         name: 'snet-clusteringressservices'
         properties: {
-          addressPrefix: '10.240.4.0/28'
+          addressPrefix: spokeVirtualNetworkClusterIngressServicesSubnetAddressSpace
           routeTable: {
             id: routeNextHopToFirewall.id
           }
@@ -398,7 +550,7 @@ resource vnetSpoke 'Microsoft.Network/virtualNetworks@2021-05-01' = {
       {
         name: 'snet-applicationgateway'
         properties: {
-          addressPrefix: '10.240.5.0/24'
+          addressPrefix: spokeVirtualNetworkAppGatewaySubnetAddressSpace
           networkSecurityGroup: {
             id: nsgAppGwSubnet.id
           }
@@ -409,7 +561,7 @@ resource vnetSpoke 'Microsoft.Network/virtualNetworks@2021-05-01' = {
       {
         name: 'snet-privatelinkendpoints'
         properties: {
-          addressPrefix: '10.240.4.32/28'
+          addressPrefix: spokeVirtualNetworkPrivateLinkEndpointsSubnetAddressSpace
           networkSecurityGroup: {
             id: nsgPrivateLinkEndpointsSubnet.id
           }
@@ -420,12 +572,26 @@ resource vnetSpoke 'Microsoft.Network/virtualNetworks@2021-05-01' = {
       {
         name: 'snet-apiserver'
         properties: {
-          addressPrefix: '10.240.6.0/27'
+          addressPrefix: spokeVirtualNetworkApiServerSubnetAddressSpace
           networkSecurityGroup: {
             id: nsgApiServerSubnet.id
           }
           privateEndpointNetworkPolicies: 'Disabled'
           privateLinkServiceNetworkPolicies: 'Enabled'
+        }
+      }
+      {
+        name: 'VmSubnet'
+        properties: {
+          routeTable: {
+            id: routeNextHopToFirewall.id
+          }
+          addressPrefix: spokeVirtualNetworkVmSubnetAddressSpace
+          networkSecurityGroup: {
+            id: nsgVmSubnet.id
+          }
+          privateEndpointNetworkPolicies: 'Disabled'
+          privateLinkServiceNetworkPolicies: 'Disabled'
         }
       }
     ]
