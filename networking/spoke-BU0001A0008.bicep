@@ -315,25 +315,12 @@ resource nsgApiServerSubnet 'Microsoft.Network/networkSecurityGroups@2021-05-01'
   properties: {
     securityRules: [
       {
-        name: 'AllowAll443InFromVnet'
+        name: 'AllowAllHttpsInFromVnet'
         properties: {
           protocol: 'Tcp'
           sourcePortRange: '*'
           sourceAddressPrefix: 'VirtualNetwork'
           destinationPortRange: '443'
-          destinationAddressPrefix: 'VirtualNetwork'
-          access: 'Allow'
-          priority: 100
-          direction: 'Inbound'
-        }
-      }
-      {
-        name: 'AllowAll443OutToVnet'
-        properties: {
-          protocol: 'Tcp'
-          sourcePortRange: '443'
-          sourceAddressPrefix: 'VirtualNetwork'
-          destinationPortRange: '*'
           destinationAddressPrefix: 'VirtualNetwork'
           access: 'Allow'
           priority: 100
@@ -351,6 +338,19 @@ resource nsgApiServerSubnet 'Microsoft.Network/networkSecurityGroups@2021-05-01'
           access: 'Deny'
           priority: 1000
           direction: 'Inbound'
+        }
+      }
+      {
+        name: 'AllowAllHttpsOutToVnet'
+        properties: {
+          protocol: 'Tcp'
+          sourcePortRange: '*'
+          sourceAddressPrefix: 'VirtualNetwork'
+          destinationPortRange: '443'
+          destinationAddressPrefix: 'VirtualNetwork'
+          access: 'Allow'
+          priority: 100
+          direction: 'Outbound'
         }
       }
       {
