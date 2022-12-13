@@ -650,29 +650,6 @@ resource fwPolicy 'Microsoft.Network/firewallPolicies@2021-05-01' = {
             }
             {
               ruleType: 'ApplicationRule'
-              name: 'devops-origin'
-              description: 'Supports Azure DevOps agent on jump server.'
-              protocols: [
-                {
-                  protocolType: 'Https'
-                  port: 443
-                }
-              ]
-              fqdnTags: []
-              webCategories: []
-              targetFqdns: [
-                'dev.azure.com'
-              ]
-              targetUrls: []
-              destinationAddresses: []
-              terminateTLS: false
-              sourceAddresses: []
-              sourceIpGroups: [
-                ipgNodepoolSubnet.id
-              ]
-            }
-            {
-              ruleType: 'ApplicationRule'
               name: 'flux-extension-runtime-requirements'
               description: 'Supports required communication for the Flux v2 extension operate and contains allowances for our applications deployed to the cluster.'
               protocols: [
@@ -720,7 +697,7 @@ resource fwPolicy 'Microsoft.Network/firewallPolicies@2021-05-01' = {
               fqdnTags: []
               webCategories: []
               targetFqdns: [
-                '*.blob.${environment().suffixes.storage}' // required to connect to storage accounts
+                '*.blob.${environment().suffixes.storage}' // required to connect to storage accounts AND LAW
                 'azure.archive.ubuntu.com' // required to run apt-get commands
                 'archive.ubuntu.com' // required to run apt-get commands
                 'security.ubuntu.com' // required to run apt-get commands
@@ -731,11 +708,15 @@ resource fwPolicy 'Microsoft.Network/firewallPolicies@2021-05-01' = {
                 'api.github.com' // required to get kubelogin and flux
                 'github-releases.githubusercontent.com' // required to get kubelogin, flux, osm, helm
                 'github.com' // required to get kubelogin and osm
+                'dev.azure.com' // required to install and run Azure DevOps agent
                 'raw.githubusercontent.com' // required to get helm install script
                 'get.helm.sh' // required to get helm 
                 'fluxcd.io' // required to get flux
                 '${split(environment().resourceManager, '/')[2]}' // Prevent the linter from getting upset at management.azure.com - https://github.com/Azure/bicep/issues/3080
                 '${split(environment().authentication.loginEndpoint, '/')[2]}' // Prevent the linter from getting upset at login.microsoftonline.com
+                '*.ods.opinsights.azure.com' // required for LAW
+                '*.oms.opinsights.azure.com' // required for LAW
+                '*.azure-automation.net' // required for LAW
               ]
               targetUrls: []
               destinationAddresses: []

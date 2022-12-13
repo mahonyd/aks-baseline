@@ -39,6 +39,11 @@ resource snetClusterIngress 'Microsoft.Network/virtualNetworks/subnets@2021-05-0
   name: 'snet-clusteringressservices'
 }
 
+resource snetApiServer 'Microsoft.Network/virtualNetworks/subnets@2021-05-01' existing = {
+  parent: targetVirtualNetwork
+  name: 'snet-apiserver'
+}
+
 /*** RESOURCES ***/
 
 resource snetClusterNodesMiClusterControlPlaneNetworkContributorRole_roleAssignment 'Microsoft.Authorization/roleAssignments@2020-10-01-preview' = {
@@ -58,6 +63,17 @@ resource snetClusterIngressServicesMiClusterControlPlaneSecretsUserRole_roleAssi
   properties: {
     roleDefinitionId: networkContributorRole.id
     description: 'Allows cluster identity to join load balancers (ingress resources) to this subnet.'
+    principalId: miClusterControlPlanePrincipalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource snetApiServerMiClusterControlPlaneNetworkContributorRole_roleAssignment 'Microsoft.Authorization/roleAssignments@2020-10-01-preview' = {
+  scope: snetApiServer
+  name: guid(snetApiServer.id, networkContributorRole.id, clusterControlPlaneIdentityName)
+  properties: {
+    roleDefinitionId: networkContributorRole.id
+    description: 'Allows cluster identity to access this subnet.'
     principalId: miClusterControlPlanePrincipalId
     principalType: 'ServicePrincipal'
   }

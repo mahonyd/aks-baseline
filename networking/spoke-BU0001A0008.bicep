@@ -695,4 +695,4 @@ output vmSubnetResourceIds array = [
   vnetSpoke::snetVm.id
 ]
 output appGwPublicIpAddress string = pipPrimaryClusterIp.properties.ipAddress
-output vmSubnetId string = resourceId('Microsoft.Network/VirtualNetworks/subnets', 'vnet-spoke-${orgAppId}-00', 'VmSubnet')
+output vmSubnetId string = resourceId('Microsoft.Network/VirtualNetworks/subnets', 'vnet-spoke-${orgAppId}-00', 'snet-vm')
