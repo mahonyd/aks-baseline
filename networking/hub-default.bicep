@@ -554,5 +554,4 @@ resource bastionHost 'Microsoft.Network/bastionHosts@2022-05-01' = {
 /*** OUTPUTS ***/
 
 output hubVnetId string = vnetHub.id
-output vmSubnetId string = resourceId('Microsoft.Network/VirtualNetworks/subnets', 'vnet-${location}-hub', 'VmSubnet')
 output bastionSubnetId string = resourceId('Microsoft.Network/VirtualNetworks/subnets', 'vnet-${location}-hub', 'AzureBastionSubnet')

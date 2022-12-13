@@ -386,7 +386,7 @@ resource nsgApiServerSubnet_diagnosticsSettings 'Microsoft.Insights/diagnosticSe
 
 // NSG around the VM Subnet.
 resource nsgVmSubnet 'Microsoft.Network/networkSecurityGroups@2021-05-01' = {
-  name: 'nsg-${location}-vm'
+  name: 'nsg-${clusterVNetName}-vm'
   location: location
   properties: {
     securityRules: [
@@ -581,7 +581,7 @@ resource vnetSpoke 'Microsoft.Network/virtualNetworks@2021-05-01' = {
         }
       }
       {
-        name: 'VmSubnet'
+        name: 'snet-vm'
         properties: {
           routeTable: {
             id: routeNextHopToFirewall.id
@@ -688,3 +688,4 @@ output nodepoolSubnetResourceIds array = [
   vnetSpoke::snetClusterNodes.id
 ]
 output appGwPublicIpAddress string = pipPrimaryClusterIp.properties.ipAddress
+output vmSubnetId string = resourceId('Microsoft.Network/VirtualNetworks/subnets', 'vnet-spoke-${orgAppId}-00', 'VmSubnet')

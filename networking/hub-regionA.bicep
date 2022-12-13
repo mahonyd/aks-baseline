@@ -6,6 +6,10 @@ targetScope = 'resourceGroup'
 @minLength(1)
 param nodepoolSubnetResourceIds array
 
+@description('Subnet resource IDs for jump vms in all attached spokes to allow necessary outbound traffic through the firewall.')
+@minLength(1)
+param vmSubnetResourceIds array
+
 @allowed([
   'australiaeast'
   'canadacentral'
@@ -381,6 +385,15 @@ resource ipgNodepoolSubnet 'Microsoft.Network/ipGroups@2021-05-01' = {
   }
 }
 
+// This holds IP addresses of known vm subnets in spokes.
+resource ipgVmSubnet 'Microsoft.Network/ipGroups@2021-05-01' = {
+  name: 'ipg-${location}-jumpvm'
+  location: location
+  properties: {
+    ipAddresses: [for vmSubnetResourceId in vmSubnetResourceIds: '${reference(vmSubnetResourceId, '2020-05-01').addressPrefix}']
+  }
+}
+
 // Azure Firewall starter policy
 resource fwPolicy 'Microsoft.Network/firewallPolicies@2021-05-01' = {
   name: 'fw-policies-${location}'
@@ -729,7 +742,7 @@ resource fwPolicy 'Microsoft.Network/firewallPolicies@2021-05-01' = {
               terminateTLS: false
               sourceAddresses: []
               sourceIpGroups: [
-                ipgNodepoolSubnet.id
+                ipgVmSubnet.id
               ]
             }
           ]
