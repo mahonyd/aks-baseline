@@ -1,4 +1,8 @@
 // Parameters
+@description('The regional hub network.')
+@minLength(79)
+param hubVnetResourceId string
+
 @description('Specifies the name of the virtual machine.')
 param vmName string = 'JumpVm'
 
@@ -101,6 +105,17 @@ resource virtualMachineNic 'Microsoft.Network/networkInterfaces@2021-08-01' = {
   }
 }
 
+// This is 'rg-enterprise-networking-hubs' if using the default values in the walkthrough
+resource hubResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' existing = {
+  scope: subscription()
+  name: '${split(hubVnetResourceId,'/')[4]}'
+}
+
+resource laHub 'Microsoft.OperationalInsights/workspaces@2021-06-01' existing = {
+  scope: hubResourceGroup
+  name: 'la-hub-${location}'
+}
+
 //resource storageAccount 'Microsoft.Storage/storageAccounts@2021-09-01' existing = {
  // name: storageAccountName
 //}
@@ -162,10 +177,6 @@ resource virtualMachine 'Microsoft.Compute/virtualMachines@2021-11-01' = {
   }
 }
 
-resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2021-12-01-preview' existing = {
-  name: workspaceName
-}
-
 resource omsAgentForLinux 'Microsoft.Compute/virtualMachines/extensions@2021-11-01' = {
   parent: virtualMachine
   name: 'LogAnalytics'
@@ -175,11 +186,11 @@ resource omsAgentForLinux 'Microsoft.Compute/virtualMachines/extensions@2021-11-
     type: 'OmsAgentForLinux'
     typeHandlerVersion: '1.12'
     settings: {
-      workspaceId: reference(logAnalyticsWorkspace.id, logAnalyticsWorkspace.apiVersion).customerId
+      workspaceId: reference(laHub.id, laHub.apiVersion).customerId
       stopOnMultipleConnections: false
     }
     protectedSettings: {
-      workspaceKey: listKeys(logAnalyticsWorkspace.id, logAnalyticsWorkspace.apiVersion).primarySharedKey
+      workspaceKey: listKeys(laHub.id, laHub.apiVersion).primarySharedKey
     }
   }
 }
