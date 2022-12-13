@@ -61,9 +61,6 @@ param dataDiskSize int = 50
 @description('Specifies the caching requirements for the data disks.')
 param dataDiskCaching string = 'ReadWrite'
 
-@description('Specifies the name of the Log Analytics workspace.')
-param workspaceName string
-
 @description('Specifies the location.')
 param location string = resourceGroup().location
 

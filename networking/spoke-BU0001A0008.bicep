@@ -600,6 +600,10 @@ resource vnetSpoke 'Microsoft.Network/virtualNetworks@2021-05-01' = {
   resource snetClusterNodes 'subnets' existing = {
     name: 'snet-clusternodes'
   }
+
+  resource snetVm 'subnets' existing = {
+    name: 'snet-vm'
+  }
 }
 
 // Peer to regional hub
@@ -686,6 +690,9 @@ resource pipPrimaryClusterIp_diagnosticSetting 'Microsoft.Insights/diagnosticSet
 output clusterVnetResourceId string = vnetSpoke.id
 output nodepoolSubnetResourceIds array = [
   vnetSpoke::snetClusterNodes.id
+]
+output vmSubnetResourceIds array = [
+  vnetSpoke::snetVm.id
 ]
 output appGwPublicIpAddress string = pipPrimaryClusterIp.properties.ipAddress
 output vmSubnetId string = resourceId('Microsoft.Network/VirtualNetworks/subnets', 'vnet-spoke-${orgAppId}-00', 'VmSubnet')
