@@ -678,7 +678,9 @@ resource fwPolicy 'Microsoft.Network/firewallPolicies@2021-05-01' = {
               webCategories: []
               targetFqdns: [
                 '${location}.dp.kubernetesconfiguration.azure.com'
+                '*.hcp.${location}.azmk8s.io'
                 'mcr.microsoft.com'
+                'packages.microsoft.com'
                 '${split(environment().resourceManager, '/')[2]}' // Prevent the linter from getting upset at management.azure.com - https://github.com/Azure/bicep/issues/3080
                 '${split(environment().authentication.loginEndpoint, '/')[2]}' // Prevent the linter from getting upset at login.microsoftonline.com
                 '*.blob.${environment().suffixes.storage}' // required for the extension installer to download the helm chart install flux. This storage account is not predictable, but does look like eusreplstore196 for example.
