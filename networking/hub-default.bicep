@@ -476,7 +476,7 @@ resource hubFirewall 'Microsoft.Network/azureFirewalls@2021-05-01' = {
   ]
   properties: {
     sku: {
-      tier: 'Premium'
+      tier: 'Standard'
       name: 'AZFW_VNet'
     }
     firewallPolicy: {

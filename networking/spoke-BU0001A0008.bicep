@@ -578,6 +578,14 @@ resource vnetSpoke 'Microsoft.Network/virtualNetworks@2021-05-01' = {
           }
           privateEndpointNetworkPolicies: 'Disabled'
           privateLinkServiceNetworkPolicies: 'Enabled'
+          delegations: [
+            {
+              name: 'aks-delegation'
+              properties: {
+                serviceName: 'Microsoft.ContainerService/managedClusters'
+              }
+            }
+          ]
         }
       }
       {

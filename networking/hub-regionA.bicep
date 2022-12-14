@@ -6,6 +6,10 @@ targetScope = 'resourceGroup'
 @minLength(1)
 param nodepoolSubnetResourceIds array
 
+@description('Subnet resource IDs for API Server to allow necessary outbound traffic through the firewall.')
+@minLength(1)
+param apiServerSubnetResourceIds array
+
 @description('Subnet resource IDs for jump vms in all attached spokes to allow necessary outbound traffic through the firewall.')
 @minLength(1)
 param vmSubnetResourceIds array
@@ -385,6 +389,14 @@ resource ipgNodepoolSubnet 'Microsoft.Network/ipGroups@2021-05-01' = {
   }
 }
 
+resource ipgApiServerSubnet 'Microsoft.Network/ipGroups@2021-05-01' = {
+  name: 'ipg-${location}-ApiServer'
+  location: location
+  properties: {
+    ipAddresses: [for apiServerSubnetResourceId in apiServerSubnetResourceIds: '${reference(apiServerSubnetResourceId, '2020-05-01').addressPrefix}']
+  }
+}
+
 // This holds IP addresses of known vm subnets in spokes.
 resource ipgVmSubnet 'Microsoft.Network/ipGroups@2021-05-01' = {
   name: 'ipg-${location}-jumpvm'
@@ -565,6 +577,7 @@ resource fwPolicy 'Microsoft.Network/firewallPolicies@2021-05-01' = {
               sourceAddresses: []
               sourceIpGroups: [
                 ipgNodepoolSubnet.id
+                ipgApiServerSubnet.id
               ]
             }
             {
@@ -589,6 +602,7 @@ resource fwPolicy 'Microsoft.Network/firewallPolicies@2021-05-01' = {
               sourceAddresses: []
               sourceIpGroups: [
                 ipgNodepoolSubnet.id
+                ipgApiServerSubnet.id
               ]
             }
             {
@@ -612,6 +626,7 @@ resource fwPolicy 'Microsoft.Network/firewallPolicies@2021-05-01' = {
               sourceAddresses: []
               sourceIpGroups: [
                 ipgNodepoolSubnet.id
+                ipgApiServerSubnet.id
               ]
             }
           ]
@@ -646,6 +661,7 @@ resource fwPolicy 'Microsoft.Network/firewallPolicies@2021-05-01' = {
               sourceAddresses: []
               sourceIpGroups: [
                 ipgNodepoolSubnet.id
+                ipgApiServerSubnet.id
               ]
             }
             {
@@ -678,6 +694,7 @@ resource fwPolicy 'Microsoft.Network/firewallPolicies@2021-05-01' = {
               sourceAddresses: []
               sourceIpGroups: [
                 ipgNodepoolSubnet.id
+                ipgApiServerSubnet.id
               ]
             }
             {

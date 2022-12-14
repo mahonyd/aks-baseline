@@ -1611,7 +1611,7 @@ resource peKv 'Microsoft.Network/privateEndpoints@2021-05-01' = {
   }
 
   resource pdnszg 'privateDnsZoneGroups' = {
-    name: 'default'
+    name: 'PrivateDnsZoneGroupName'
     properties: {
       privateDnsZoneConfigs: [
         {
@@ -1801,6 +1801,8 @@ resource mc 'Microsoft.ContainerService/managedClusters@2022-09-02-preview' = {
       //authorizedIPRanges: clusterAuthorizedIPRanges
       enablePrivateCluster: true
       enableVnetIntegration: true
+      privateDNSZone: 'none'
+      enablePrivateClusterPublicFQDN: true
       subnetId: targetVirtualNetwork::snetApiServer.id
       
     }

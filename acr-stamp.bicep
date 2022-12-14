@@ -234,7 +234,7 @@ resource privateEndpointAcrToVnet 'Microsoft.Network/privateEndpoints@2021-05-01
   }
 
   resource privateDnsZoneGroupAcr 'privateDnsZoneGroups@2021-05-01' = {
-    name: 'default'
+    name: 'acrPrivateDnsZoneGroup'
     properties: {
       privateDnsZoneConfigs: [
         {
