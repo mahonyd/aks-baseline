@@ -375,7 +375,7 @@ resource fwPolicy 'Microsoft.Network/firewallPolicies@2021-05-01' = {
   location: location
   properties: {
     sku: {
-      tier: 'Premium'
+      tier: 'Standard'
     }
     threatIntelMode: 'Deny'
     insights: {
