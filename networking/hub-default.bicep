@@ -375,7 +375,7 @@ resource fwPolicy 'Microsoft.Network/firewallPolicies@2021-05-01' = {
   location: location
   properties: {
     sku: {
-      tier: 'Standard'
+      tier: 'Premium'
     }
     threatIntelMode: 'Deny'
     insights: {
@@ -476,7 +476,7 @@ resource hubFirewall 'Microsoft.Network/azureFirewalls@2021-05-01' = {
   ]
   properties: {
     sku: {
-      tier: 'Standard'
+      tier: 'Premium'
       name: 'AZFW_VNet'
     }
     firewallPolicy: {
