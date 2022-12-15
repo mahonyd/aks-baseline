@@ -739,7 +739,9 @@ resource fwPolicy 'Microsoft.Network/firewallPolicies@2021-05-01' = {
                 'dl.k8s.io' // required to get kubectl
                 'microsoft.com' // required for device login
                 '*.microsoft.com'  // required for downloading SSMS etc.
-                'aadcdn.msftauth.net' // required for MS loging page to work
+                'aadcdn.msftauth.net' // required for MS login page to work
+                'onegetcdn.azureedge.net'
+                'objects.githubusercontent.com' // required to get kubelogin
               ]
               targetUrls: []
               destinationAddresses: []

@@ -436,6 +436,20 @@ resource nsgVmSubnet 'Microsoft.Network/networkSecurityGroups@2021-05-01' = {
         }
       }
       {
+        name: 'AllowHttpsToVnetOutbound'
+        properties: {
+          description: 'Allow HTTPS out to the VNET'
+          protocol: 'Tcp'
+          sourcePortRange: '*'
+          sourceAddressPrefix: 'VirtualNetwork'
+          destinationPortRange: '443'
+          destinationAddressPrefix: 'VirtualNetwork'
+          access: 'Allow'
+          priority: 130
+          direction: 'Outbound'
+        }
+      }
+      {
         name: 'AllowHttpToInternetOutbound'
         properties: {
           description: 'Allow HTTP out to the internet'
@@ -445,7 +459,7 @@ resource nsgVmSubnet 'Microsoft.Network/networkSecurityGroups@2021-05-01' = {
           destinationPortRange: '80'
           destinationAddressPrefix: 'Internet'
           access: 'Allow'
-          priority: 130
+          priority: 140
           direction: 'Outbound'
         }
       }
