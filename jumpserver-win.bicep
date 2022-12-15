@@ -22,7 +22,7 @@ param imagePublisher string = 'MicrosoftWindowsServer'
 param imageOffer string = 'WindowsServer'
 
 @description('Specifies the Windows version for the VM. This will pick a fully patched image of this given Windows version.')
-param imageSku string = '2022-datacenter-azure-edition-core'
+param imageSku string = '2022-datacenter-azure-edition-smalldisk'
 
 @description('Specifies the name of the administrator account of the virtual machine.')
 param vmAdminUsername string
