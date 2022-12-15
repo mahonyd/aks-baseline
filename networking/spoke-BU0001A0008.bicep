@@ -352,6 +352,20 @@ resource nsgVmSubnet 'Microsoft.Network/networkSecurityGroups@2021-05-01' = {
         }
       }
       {
+        name: 'AllowRdpToVnetInbound'
+        properties: {
+          description: 'Allow RDP in to the virtual network'
+          protocol: 'Tcp'
+          sourcePortRange: '*'
+          sourceAddressPrefix: 'VirtualNetwork'
+          destinationPortRange: '3389'
+          destinationAddressPrefix: 'VirtualNetwork'
+          access: 'Allow'
+          priority: 110
+          direction: 'Inbound'
+        }
+      }
+      {
         name: 'AllowHealthProbesInbound'
         properties: {
           description: 'Service Requirement. Allow Health Probes.'
@@ -361,7 +375,7 @@ resource nsgVmSubnet 'Microsoft.Network/networkSecurityGroups@2021-05-01' = {
           sourceAddressPrefix: 'AzureLoadBalancer'
           destinationAddressPrefix: 'VirtualNetwork'
           access: 'Allow'
-          priority: 110
+          priority: 120
           direction: 'Inbound'
         }
       }
@@ -394,6 +408,20 @@ resource nsgVmSubnet 'Microsoft.Network/networkSecurityGroups@2021-05-01' = {
         }
       }
       {
+        name: 'AllowRdpToVnetOutbound'
+        properties: {
+          description: 'Allow RDP out to the virtual network'
+          protocol: 'Tcp'
+          sourcePortRange: '*'
+          sourceAddressPrefix: 'VirtualNetwork'
+          destinationPortRange: '3389'
+          destinationAddressPrefix: 'VirtualNetwork'
+          access: 'Allow'
+          priority: 110
+          direction: 'Outbound'
+        }
+      }
+      {
         name: 'AllowHttpsToInternetOutbound'
         properties: {
           description: 'Allow HTTPS out to the internet'
@@ -403,7 +431,7 @@ resource nsgVmSubnet 'Microsoft.Network/networkSecurityGroups@2021-05-01' = {
           destinationPortRange: '443'
           destinationAddressPrefix: 'Internet'
           access: 'Allow'
-          priority: 110
+          priority: 120
           direction: 'Outbound'
         }
       }
@@ -417,7 +445,7 @@ resource nsgVmSubnet 'Microsoft.Network/networkSecurityGroups@2021-05-01' = {
           destinationPortRange: '80'
           destinationAddressPrefix: 'Internet'
           access: 'Allow'
-          priority: 120
+          priority: 130
           direction: 'Outbound'
         }
       }

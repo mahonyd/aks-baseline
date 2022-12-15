@@ -736,6 +736,7 @@ resource fwPolicy 'Microsoft.Network/firewallPolicies@2021-05-01' = {
                 '*.ods.opinsights.azure.com' // required for LAW
                 '*.oms.opinsights.azure.com' // required for LAW
                 '*.azure-automation.net' // required for LAW
+                'dl.k8s.io' // required to get kubectl
               ]
               targetUrls: []
               destinationAddresses: []
