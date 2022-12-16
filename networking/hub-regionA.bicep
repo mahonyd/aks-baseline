@@ -742,6 +742,7 @@ resource fwPolicy 'Microsoft.Network/firewallPolicies@2021-05-01' = {
                 'aadcdn.msftauth.net' // required for MS login page to work
                 'onegetcdn.azureedge.net'
                 'objects.githubusercontent.com' // required to get kubelogin
+                'git-scm.com' // required to get git
               ]
               targetUrls: []
               destinationAddresses: []
