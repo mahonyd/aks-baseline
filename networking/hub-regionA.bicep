@@ -743,6 +743,12 @@ resource fwPolicy 'Microsoft.Network/firewallPolicies@2021-05-01' = {
                 'onegetcdn.azureedge.net'
                 'objects.githubusercontent.com' // required to get kubelogin
                 'git-scm.com' // required to get git
+                '*.vssps.visualstudio.com' // required for Azure DevOps login
+                'logincdn.msauth.net' // required for Azure DevOps login
+                'vstsagentpackage.azureedge.net' // required for Azure DevOps agent download
+                '*.visualstudio.com' // required for Azure DevOps agent install
+                '*.dev.azure.com' // required for Azure DevOps agent install
+                '*.docker.com' // required for Docker download
               ]
               targetUrls: []
               destinationAddresses: []
