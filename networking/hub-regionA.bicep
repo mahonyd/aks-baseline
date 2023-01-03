@@ -749,6 +749,9 @@ resource fwPolicy 'Microsoft.Network/firewallPolicies@2021-05-01' = {
                 '*.visualstudio.com' // required for Azure DevOps agent install
                 '*.dev.azure.com' // required for Azure DevOps agent install
                 '*.docker.com' // required for Docker download
+                'github.githubassets.com' // required for github page
+                'codeload.github.com' // required for github download
+                'portal.azure.com' // required for Azure Portal
               ]
               targetUrls: []
               destinationAddresses: []
