@@ -752,6 +752,8 @@ resource fwPolicy 'Microsoft.Network/firewallPolicies@2021-05-01' = {
                 'github.githubassets.com' // required for github page
                 'codeload.github.com' // required for github download
                 'portal.azure.com' // required for Azure Portal
+                'login.live.com' // required for Azure Portal login
+                'ux.console.azure.com' // required for Azure Portal console
               ]
               targetUrls: []
               destinationAddresses: []
