@@ -6,6 +6,7 @@
     azdourl=${AZDO_URL}
     
     # install az cli
+    curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
     curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
     
     # install docker
@@ -22,6 +23,10 @@
     sudo apt update
     sudo apt-get install -y kubectl
     
+    # install kubelogin using Homebrew
+    sudo /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    sudo brew install int128/kubelogin/kubelogin
+
     # install helm
     curl -o helm.tar.gz https://get.helm.sh/helm-v3.3.4-linux-amd64.tar.gz
     tar zxvf helm.tar.gz
@@ -32,15 +37,15 @@
     # download azdo agent
     mkdir -p /opt/azdo && cd /opt/azdo
     cd /opt/azdo
-    curl -o azdoagent.tar.gz https://vstsagentpackage.azureedge.net/agent/2.175.2/vsts-agent-linux-x64-2.175.2.tar.gz
-    tar xzvf azdoagent.tar.gz
-    rm -f azdoagent.tar.gz
+    sudo curl -o azdoagent.tar.gz https://vstsagentpackage.azureedge.net/agent/2.214.1/vsts-agent-linux-x64-2.214.1.tar.gz
+    sudo tar xzvf azdoagent.tar.gz
+    sudo rm -f azdoagent.tar.gz
     
     # configure as azdouser
-    chown -R $agentuser /opt/azdo
-    chmod -R 755 /opt/azdo
-    runuser -l $agentuser -c "/opt/azdo/config.sh --unattended --url $azdourl --auth pat --token $pat --pool $pool --acceptTeeEula"
+    sudo chown -R $agentuser /opt/azdo
+    sudo chmod -R 755 /opt/azdo
+    sudo runuser -l $agentuser -c "/opt/azdo/config.sh --unattended --url $azdourl --auth pat --token $pat --pool $pool --acceptTeeEula"
     
     # install and start the service
-    ./svc.sh install
-    ./svc.sh start
+    sudo ./svc.sh install
+    sudo ./svc.sh start

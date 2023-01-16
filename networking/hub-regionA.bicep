@@ -754,6 +754,8 @@ resource fwPolicy 'Microsoft.Network/firewallPolicies@2021-05-01' = {
                 'portal.azure.com' // required for Azure Portal
                 'login.live.com' // required for Azure Portal login
                 'ux.console.azure.com' // required for Azure Portal console
+                'apt.kubernetes.io' // required for Docker install on Linux
+                'packages.cloud.google.com' // required for Docker install on Linux
               ]
               targetUrls: []
               destinationAddresses: []
