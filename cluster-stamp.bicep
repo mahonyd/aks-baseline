@@ -40,7 +40,7 @@ param aksIngressControllerCertificate string
   'southeastasia'
 ])
 param location string = 'eastus2'
-param kubernetesVersion string = '1.25.2'
+param kubernetesVersion string = '1.25.4'
 
 @description('Domain name to use for App Gateway and AKS ingress.')
 param domainName string = 'contoso.com'
