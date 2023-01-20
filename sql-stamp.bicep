@@ -39,6 +39,12 @@ param administratorLogin string
 @secure()
 param administratorLoginPassword string
 
+@description('Object ID of the server administrator group.')
+param adminGroupId string
+
+@description('Tenant ID of the administrator.')
+param tenantId string
+
 /*** VARIABLES ***/
 
 
@@ -60,24 +66,6 @@ resource spokeVirtualNetwork 'Microsoft.Network/virtualNetworks@2021-05-01' exis
 }
 
 /*** RESOURCES ***/
-
-// SQL Server will be exposed via Private Link, set up the related Private DNS zone and virtual network link to the spoke.
-resource dnsPrivateZoneSql 'Microsoft.Network/privateDnsZones@2020-06-01' = {
-  name: 'privatelink.azurecr.io'
-  location: 'global'
-  properties: {}
-
-  resource dnsVnetLinkSqlToSpoke 'virtualNetworkLinks@2020-06-01' = {
-    name: 'to_${spokeVirtualNetwork.name}'
-    location: 'global'
-    properties: {
-      virtualNetwork: {
-        id: targetVnetResourceId
-      }
-      registrationEnabled: false
-    }
-  }
-}
 
 // Expose Azure SQL Server via Private Link, into the cluster nodes subnet.
 resource privateEndpointSqlToVnet 'Microsoft.Network/privateEndpoints@2021-05-01' = {
@@ -101,20 +89,41 @@ resource privateEndpointSqlToVnet 'Microsoft.Network/privateEndpoints@2021-05-01
       }
     ]
   }
+}
 
-  resource privateDnsZoneGroupSql 'privateDnsZoneGroups@2021-05-01' = {
-    name: 'sqlPrivateDnsZoneGroup'
-    properties: {
-      privateDnsZoneConfigs: [
-        {
-          name: 'privatelink-azurecr-io'
-          properties: {
-            privateDnsZoneId: dnsPrivateZoneSql.id
-          }
-        }
-      ]
+// SQL Server will be exposed via Private Link, set up the related Private DNS zone and virtual network link to the spoke.
+resource dnsPrivateZoneSql 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+  name: 'private-dns-${serverName}'
+  location: 'global'
+  properties: {}
+}
+
+resource dnsVnetLinkSqlToSpoke 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+  name: 'to_${spokeVirtualNetwork.name}'
+  location: 'global'
+  properties: {
+    virtualNetwork: {
+      id: targetVnetResourceId
     }
+    registrationEnabled: false
   }
+}
+
+resource privateDnsZoneGroupSql 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2021-05-01' = {
+  name: 'pe-${serverName}/sqldnsgroup'
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'config1'
+        properties: {
+          privateDnsZoneId: dnsPrivateZoneSql.id
+        }
+      }
+    ]
+  }
+  dependsOn: [
+    privateEndpointSqlToVnet
+  ]
 }
 
 resource sqlServer 'Microsoft.Sql/servers@2022-05-01-preview' = {
@@ -123,6 +132,14 @@ resource sqlServer 'Microsoft.Sql/servers@2022-05-01-preview' = {
   properties: {
     administratorLogin: administratorLogin
     administratorLoginPassword: administratorLoginPassword
+    administrators: {
+      administratorType: 'ActiveDirectory'
+      azureADOnlyAuthentication: false
+      login: 'mahonyd'
+      principalType: 'Group'
+      sid: adminGroupId
+      tenantId: tenantId
+    }
     version: '12.0'
     publicNetworkAccess: 'Disabled'
   }

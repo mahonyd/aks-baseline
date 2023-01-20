@@ -265,6 +265,19 @@ resource nsgPrivateLinkEndpointsSubnet 'Microsoft.Network/networkSecurityGroups@
         }
       }
       {
+        name: 'AllowAllSQLInFromVnet'
+        properties: {
+          protocol: 'Tcp'
+          sourcePortRange: '*'
+          sourceAddressPrefix: 'VirtualNetwork'
+          destinationPortRange: '1433'
+          destinationAddressPrefix: 'VirtualNetwork'
+          access: 'Allow'
+          priority: 110
+          direction: 'Inbound'
+        }
+      }
+      {
         name: 'DenyAllInbound'
         properties: {
           protocol: '*'
@@ -460,6 +473,20 @@ resource nsgVmSubnet 'Microsoft.Network/networkSecurityGroups@2021-05-01' = {
           destinationAddressPrefix: 'Internet'
           access: 'Allow'
           priority: 140
+          direction: 'Outbound'
+        }
+      }
+      {
+        name: 'AllowSqlToVnetOutbound'
+        properties: {
+          description: 'Allow SQL out to the VNET'
+          protocol: 'Tcp'
+          sourcePortRange: '*'
+          sourceAddressPrefix: 'VirtualNetwork'
+          destinationPortRange: '1433'
+          destinationAddressPrefix: 'VirtualNetwork'
+          access: 'Allow'
+          priority: 150
           direction: 'Outbound'
         }
       }

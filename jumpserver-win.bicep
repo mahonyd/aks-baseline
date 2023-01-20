@@ -7,7 +7,7 @@ param hubVnetResourceId string
 param vmName string = 'JumpVm'
 
 @description('Specifies the size of the virtual machine.')
-param vmSize string = 'Standard_D2s_v3'
+param vmSize string = 'Standard_D4s_v3'
 
 @description('Specifies the resource id of the subnet hosting the virtual machine.')
 param vmSubnetId string
