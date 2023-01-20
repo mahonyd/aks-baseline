@@ -40,7 +40,7 @@ param aksIngressControllerCertificate string
   'southeastasia'
 ])
 param location string = 'eastus2'
-param kubernetesVersion string = '1.25.4'
+param kubernetesVersion string = '1.25.2'
 
 @description('Domain name to use for App Gateway and AKS ingress.')
 param domainName string = 'contoso.com'
@@ -2028,7 +2028,7 @@ resource mcFlux_extension 'Microsoft.KubernetesConfiguration/extensions@2021-09-
       'helm-controller.enabled': 'false'
       'source-controller.enabled': 'true'
       'kustomize-controller.enabled': 'true'
-      'notification-controller.enabled': 'false'
+      'notification-controller.enabled': 'true'
       'image-automation-controller.enabled': 'false'
       'image-reflector-controller.enabled': 'false'
     }

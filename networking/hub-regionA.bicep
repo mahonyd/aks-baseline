@@ -757,6 +757,10 @@ resource fwPolicy 'Microsoft.Network/firewallPolicies@2021-05-01' = {
                 'apt.kubernetes.io' // required for Docker install on Linux
                 'packages.cloud.google.com' // required for Docker install on Linux
                 'www.powershellgallery.com' // required for Powershell on Windows
+                '*.azureedge.net' // required for Powershell module download on Windows
+                '*.portal.azure.net' // required for portal
+                'deb.debian.org' // required for image build
+                'api.nuget.org' // required for image build
               ]
               targetUrls: []
               destinationAddresses: []

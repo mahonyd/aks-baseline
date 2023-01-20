@@ -95,7 +95,7 @@ resource privateEndpointSqlToVnet 'Microsoft.Network/privateEndpoints@2021-05-01
         properties: {
           privateLinkServiceId: sqlServer.id
           groupIds: [
-            'registry'
+            'sqlServer'
           ]
         }
       }
