@@ -654,6 +654,7 @@ resource fwPolicy 'Microsoft.Network/firewallPolicies@2021-05-01' = {
               targetFqdns: [
                 'github.com'
                 'api.github.com'
+                'raw.githubusercontent.com'
               ]
               targetUrls: []
               destinationAddresses: []
