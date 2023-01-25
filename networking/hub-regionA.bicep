@@ -14,6 +14,10 @@ param apiServerSubnetResourceIds array
 @minLength(1)
 param vmSubnetResourceIds array
 
+@description('Subnet resource IDs for private endpoints in all attached spokes to allow necessary outbound traffic through the firewall.')
+@minLength(1)
+param privateEndpointSubnetResourceIds array
+
 @allowed([
   'australiaeast'
   'canadacentral'
@@ -406,6 +410,15 @@ resource ipgVmSubnet 'Microsoft.Network/ipGroups@2021-05-01' = {
   }
 }
 
+// This holds IP addresses of known private endpoint subnets in spokes.
+resource ipgPrivateEndpointSubnet 'Microsoft.Network/ipGroups@2021-05-01' = {
+  name: 'ipg-${location}-pe'
+  location: location
+  properties: {
+    ipAddresses: [for privateEndpointSubnetResourceId in privateEndpointSubnetResourceIds: '${reference(privateEndpointSubnetResourceId, '2020-05-01').addressPrefix}']
+  }
+}
+
 // Azure Firewall starter policy
 resource fwPolicy 'Microsoft.Network/firewallPolicies@2021-05-01' = {
   name: 'fw-policies-${location}'
@@ -682,6 +695,8 @@ resource fwPolicy 'Microsoft.Network/firewallPolicies@2021-05-01' = {
                 '*.hcp.${location}.azmk8s.io'
                 'mcr.microsoft.com'
                 'packages.microsoft.com'
+                'get.helm.sh' // required to get helm 
+                'fluxcd.io' // required to get flux
                 '${split(environment().resourceManager, '/')[2]}' // Prevent the linter from getting upset at management.azure.com - https://github.com/Azure/bicep/issues/3080
                 '${split(environment().authentication.loginEndpoint, '/')[2]}' // Prevent the linter from getting upset at login.microsoftonline.com
                 '*.blob.${environment().suffixes.storage}' // required for the extension installer to download the helm chart install flux. This storage account is not predictable, but does look like eusreplstore196 for example.
@@ -700,6 +715,64 @@ resource fwPolicy 'Microsoft.Network/firewallPolicies@2021-05-01' = {
                 ipgApiServerSubnet.id
               ]
             }
+          ]
+        }
+        {
+          ruleCollectionType: 'FirewallPolicyFilterRuleCollection'
+          name: 'SQL-Requirements'
+          priority: 400
+          action: {
+            type: 'Allow'
+          }
+          rules: [
+            {
+              ruleType: 'ApplicationRule'
+              name: 'sql-private-requirements'
+              description: 'Supports required communication for SQL Server with private endpoint.'
+              protocols: [
+                {
+                  protocolType: 'Https'
+                  port: 443
+                }
+                {
+                  protocolType: 'Http'
+                  port: 80
+                }
+              ]
+              fqdnTags: []
+              webCategories: []
+              targetFqdns: [
+                '${split(environment().resourceManager, '/')[2]}' // Prevent the linter from getting upset at management.azure.com - https://github.com/Azure/bicep/issues/3080
+                '${split(environment().authentication.loginEndpoint, '/')[2]}' // Prevent the linter from getting upset at login.microsoftonline.com
+                'autologon.microsoftazuread-sso.com' // required for Azure AD login
+                '*.microsoft.com' // required for Azure AD login
+                '*.windows.net' // required for Azure AD login
+                'mscrl.microsoft.com' // Used to download CRL lists
+                '*.verisign.com' // Used to download CRL lists
+                '*.entrust.com' //Used to download CRL lists for MFA.
+                'secure.aadcdn.microsoftonline-p.com' // Used for MFA.
+                'aadcdn.msftauth.net' // Used for MFA.
+                '*.microsoftonline.com' // Used to configure Azure AD directory and import/export data.
+                '*.msappproxy.net' // Used for authentication
+              ]
+              targetUrls: []
+              destinationAddresses: []
+              terminateTLS: false
+              sourceAddresses: []
+              sourceIpGroups: [
+                ipgPrivateEndpointSubnet.id
+              ]
+            }
+          ]
+        }
+        {
+          ruleCollectionType: 'FirewallPolicyFilterRuleCollection'
+          name: 'Jump-Server-Requirements'
+          priority: 500
+          action: {
+            type: 'Allow'
+          }
+          rules: [
             {
               ruleType: 'ApplicationRule'
               name: 'jump-server-requirements'
@@ -729,7 +802,7 @@ resource fwPolicy 'Microsoft.Network/firewallPolicies@2021-05-01' = {
                 'github-releases.githubusercontent.com' // required to get kubelogin, flux, osm, helm
                 'github.com' // required to get kubelogin and osm
                 'dev.azure.com' // required to install and run Azure DevOps agent
-                'raw.githubusercontent.com' // required to get helm install script
+                'raw.githubusercontent.com' // required to get helm and homebrew install scripts
                 'get.helm.sh' // required to get helm 
                 'fluxcd.io' // required to get flux
                 '${split(environment().resourceManager, '/')[2]}' // Prevent the linter from getting upset at management.azure.com - https://github.com/Azure/bicep/issues/3080
@@ -746,6 +819,7 @@ resource fwPolicy 'Microsoft.Network/firewallPolicies@2021-05-01' = {
                 'git-scm.com' // required to get git
                 '*.vssps.visualstudio.com' // required for Azure DevOps login
                 'logincdn.msauth.net' // required for Azure DevOps login
+                'logincdn.msftauth.net' // required for Azure DevOps login
                 'vstsagentpackage.azureedge.net' // required for Azure DevOps agent download
                 '*.visualstudio.com' // required for Azure DevOps agent install
                 '*.dev.azure.com' // required for Azure DevOps agent install
