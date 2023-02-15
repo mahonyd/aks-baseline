@@ -754,6 +754,8 @@ resource fwPolicy 'Microsoft.Network/firewallPolicies@2021-05-01' = {
                 'aadcdn.msftauth.net' // Used for MFA.
                 '*.microsoftonline.com' // Used to configure Azure AD directory and import/export data.
                 '*.msappproxy.net' // Used for authentication
+                'portal.azure.com' // required for authenticing SQL user using Azure Active Directory with MFA
+                'aad.portal.azure.com' // required for authenticing SQL user using Azure Active Directory with MFA
               ]
               targetUrls: []
               destinationAddresses: []
@@ -836,6 +838,13 @@ resource fwPolicy 'Microsoft.Network/firewallPolicies@2021-05-01' = {
                 '*.portal.azure.net' // required for portal
                 'deb.debian.org' // required for image build
                 'api.nuget.org' // required for image build
+                'aad.portal.azure.com' // required for authenticing SQL user using Azure Active Directory with MFA
+                '*.microsoftonline.com' // required for authenticing SQL user using Azure Active Directory with MFA
+                '*.msappproxy.net' // Used for authentication
+                '*.msecnd.net' // required for authenticing SQL user using Azure Active Directory with MFA
+                '*.windowsupdate.com' // required for authenticing SQL user using Azure Active Directory with MFA
+                'login.windows.net' // required for authenticing SQL user using Azure Active Directory with MFA
+                '*.digicert.com' // required for authenticing SQL user using Azure Active Directory with MFA
               ]
               targetUrls: []
               destinationAddresses: []

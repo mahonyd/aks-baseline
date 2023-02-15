@@ -29,6 +29,9 @@ param location string = 'eastus2'
 @description('The name of the SQL logical server.')
 param serverName string = 'sql-sb-klirdb-01'
 
+@description('The name of the SQL elastic pool.')
+param poolName string = 'sqlep-sb-klirdb-01'
+
 @description('The name of the SQL Database.')
 param sqlDBName string = 'sqldb-sb-klirdb-01'
 
@@ -42,11 +45,17 @@ param administratorLoginPassword string
 @description('Object ID of the server administrator group.')
 param adminGroupId string
 
+@description('Azure AD username of the server administrator.')
+param adminUsername string
+
 @description('Tenant ID of the administrator.')
 param tenantId string
 
-/*** VARIABLES ***/
+@description('Flag to indicate if database is zone redundant.')
+param zoneRedundant bool
 
+/*** VARIABLES ***/
+var privateDnsZoneName = 'privatelink${environment().suffixes.sqlServerHostname}'
 
 
 /*** EXISTING RESOURCES ***/
@@ -93,12 +102,13 @@ resource privateEndpointSqlToVnet 'Microsoft.Network/privateEndpoints@2021-05-01
 
 // SQL Server will be exposed via Private Link, set up the related Private DNS zone and virtual network link to the spoke.
 resource dnsPrivateZoneSql 'Microsoft.Network/privateDnsZones@2020-06-01' = {
-  name: 'private-dns-${serverName}'
+  name: privateDnsZoneName
   location: 'global'
   properties: {}
 }
 
 resource dnsVnetLinkSqlToSpoke 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+  parent: dnsPrivateZoneSql
   name: 'to_${spokeVirtualNetwork.name}'
   location: 'global'
   properties: {
@@ -135,7 +145,7 @@ resource sqlServer 'Microsoft.Sql/servers@2022-05-01-preview' = {
     administrators: {
       administratorType: 'ActiveDirectory'
       azureADOnlyAuthentication: false
-      login: 'mahonyd'
+      login: adminUsername
       principalType: 'Group'
       sid: adminGroupId
       tenantId: tenantId
@@ -145,13 +155,38 @@ resource sqlServer 'Microsoft.Sql/servers@2022-05-01-preview' = {
   }
 }
 
+resource sqlElasticPool 'Microsoft.Sql/servers/elasticPools@2022-05-01-preview' = {
+  name: poolName
+  location: location
+  sku: {
+    capacity: 2
+    name: 'GP_Gen5'
+    tier: 'GeneralPurpose'
+    family: 'Gen5'
+  }
+  parent: sqlServer
+  properties: {
+    licenseType: 'LicenseIncluded'
+    zoneRedundant: zoneRedundant
+    perDatabaseSettings: {
+      minCapacity: 0
+      maxCapacity: 2
+    }
+  }
+}
+
 resource sqlDB 'Microsoft.Sql/servers/databases@2022-05-01-preview' = {
   parent: sqlServer
   name: sqlDBName
   location: location
   sku: {
-    name: 'Standard'
-    tier: 'Standard'
+    name: 'ElasticPool'
+    tier: 'GeneralPurpose'
+  }
+  properties: {
+    collation: 'SQL_Latin1_General_CP1_CI_AS'
+    elasticPoolId: sqlElasticPool.id
+    zoneRedundant: zoneRedundant
   }
 }
 
